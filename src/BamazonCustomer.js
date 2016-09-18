@@ -1,30 +1,7 @@
 /**
  * Ronny Tomasetti
  * UCF Coding Bootcamp 2016
- * ------------------------------------------------------
- * Challenge 1: Bamazon Customer View
- * ------------------------------------------------------
- * 1) Create MySQL Database called Bamazon.
- * 2) Create table inside of Bamazon database called Products.
- * 3) Products table should have each of the following columns:
- * 		ItemID (unique id for each product)
- * 		ProductName (Name of product)
- * 		DepartmentName
- * 		Price (cost to customer)
- * 		StockQuantity (how much of the product is available in stores)
- * 4) Populate Bamazon database with about 10 mock products.
- * 5) Create a Node application called BamazonCustomer.js.
- * 		Running this application will first display all of the items available for sale.
- * 		This includes id, name, and price of products for sale.
- * 6) Then prompt users with two messages.
- * 		First ask customer the id of the product they would like to buy.
- * 		Second message should ask how many units of the product they would like to buy.
- * 7) Once customer has placed the order, app should check if store has enough in stock to meet order request.
- * 		If not, app should log phrase 'Insufficient quantity!', and prevent order from processing.
- * 		If store does have enough of the product in stock, fulfill customer's order.
- * 8) Update SQL database to reflect the remaining quantity.
- * 9) Once update processes, display total cost of customer's purchase.
- * 0) Enjoy cup of coffee and move on to manager interface =)
+ * Week 11 - Bamazon Customer View
  */
 
 var inquirer = require('../node_modules/inquirer');
@@ -35,39 +12,28 @@ var keys = require('../keys.js');
 
 /**
  * Constructor for BamazonCustomer object.
- * Contains connection variable for MySQL database.
+ * Contains connection variable for MySQL database and launch function.
  *
  * @param  {}
  * @return {}
  */
 function BamazonCustomer() {
-	this.connection = mysql.createConnection({
+	var connection = mysql.createConnection({
 		host     : keys.db.host,
 		user     : keys.db.user,
 		password : keys.db.password,
 		database : keys.db.database,
 		multipleStatements : true
 	});
-}
 
-/**
- * Starting point for the Bamazon Customer Interface.
- *
- * @param  {[type]} products [description]
- * @return {[type]}          [description]
- */
-BamazonCustomer.prototype.launch = function() {
+	this.launch = function() {
+		var productList = [];
 
-	var self = this;
+		connection.connect();
 
-	function retrieveProductsList(callback) {
-		self.connection.connect();
-
-		self.connection.query('SELECT * FROM products WHERE stock_quantity > (0)',
+		connection.query('SELECT * FROM products WHERE stock_quantity > (0)',
 			function(err, rows, fields) {
 				if (err) throw err;
-
-				var productList = [];
 
 				for (var index in rows) {
 					var product = {
@@ -79,97 +45,17 @@ BamazonCustomer.prototype.launch = function() {
 
 					productList.push(product);
 				}
-
-				callback(productList);
+				startPrompts(productList);
 			}
 		);
-
-		self.connection.end();
-	}
+	};
 
 	/**
-	 * [printProductTable description]
-	 * @param  {[type]} products [description]
-	 * @return {[type]}          [description]
-	 */
-	function printProductTable(products) {
-
-		clear();
-
-		console.log('─────────────────────────────────────────────────────────────────────────');
-		console.log('                       BAMAZON CUSTOMER ORDER VIEW                       ');
-		console.log('                              PRODUCTS LIST                              ');
-		console.log('─────────────────────────────────────────────────────────────────────────');
-
-		var table = new cli({
-			head: ['ID', 'PRODUCT', 'IN-STOCK', 'PRICE'],
-			colWidths: [6, 36, 12, 14],
-			style : {'padding-left' : 2, 'padding-right' : 2}
-		});
-
-		for (var item in products) {
-			table.push([ products[item].id, products[item].name, products[item].quantity, '$  ' + (products[item].price).toFixed(2) ]);
-		}
-
-		console.log(table.toString());
-		return;
-	}
-
-	function printShoppingCart(cart) {
-
-		var table = new cli({
-			head: ['ID', 'PRODUCT', 'QUANTITY', 'TOTAL'],
-			colWidths: [6, 34, 12, 16],
-			style : {'padding-left' : 2, 'padding-right' : 2}
-		});
-
-		for (var item in cart) {
-			table.push([cart[item].id, cart[item].name, cart[item].quantity, '$  ' + (cart[item].total).toFixed(2) ]);
-		}
-
-		console.log('─────────────────────────────────────────────────────────────────────────');
-		console.log('─────────────────────────────────────────────────────────────────────────');
-		console.log('                           YOUR SHOPPING CART                            ');
-		console.log(table.toString());
-		console.log('─────────────────────────────────────────────────────────────────────────');
-		console.log(' ');
-
-		return;
-	}
-
-	/**
-	 * [submitOrder description]
-	 * @param  {[type]} shoppingCart [description]
-	 * @return {[type]}              [description]
-	 */
-	function submitOrder(shoppingCart) {
-
-		console.log("\n\nIN SUBMIT ORDER FUNCTION!\n\n");
-
-		console.log("SHOPPING CART: ", JSON.stringify(shoppingCart, null, 4));
-
-		var queries = '';
-
-		shoppingCart.forEach( function (item) {
-			queries += mysql.format("UPDATE products SET stock_quantity = ? WHERE product_id = ?; ", item);
-		});
-
-		var sentQuery = connection.query(queries);
-	}
-
-	function updateCart(shoppingCart) {
-
-		console.log("\n\nIN UPDATE CART FUNCTION!\n\n");
-
-		console.log("SHOPPING CART: ", JSON.stringify(shoppingCart, null, 4));
-	}
-
-	/**
-	 * [startShoppingPrompts description]
+	 * [startPrompts description]
 	 * @param  {[type]} productList [description]
 	 * @return {[type]}             [description]
 	 */
-	function startShoppingPrompts(productList) {
+	function startPrompts(productList) {
 
 		var products = productList;
 
@@ -194,7 +80,7 @@ BamazonCustomer.prototype.launch = function() {
 			{
 				type	 : 'input',
 				name	 : 'newItem',
-				message  : 'Enter product id here to add cart:',
+				message  : 'Enter ID to add product to shopping cart:',
 				validate : function(value)
 				{
 					var isValid = false;
@@ -205,15 +91,18 @@ BamazonCustomer.prototype.launch = function() {
 							userItem.name = products[index].name;
 							isValid = true;
 						}
+
+						if (products[index].id === parseInt(value) && products[index].quantity === 0)
+							return 'Sorry, currently out of stock. Please enter another ID.';
 					}
 
-					return (isValid) ? isValid : 'Please enter a valid Product ID: ';
+					return (isValid) ? isValid : 'Please enter a valid product ID: ';
 				}
 			},
 			{
 				type     : 'input',
 				name     : 'quantity',
-				message  : 'How many would you like to purchase?',
+				message  : 'How many would you like to add to cart?',
 				validate : function(value)
 				{
 					var isValid = false;
@@ -226,9 +115,6 @@ BamazonCustomer.prototype.launch = function() {
 							userItem.quantity = parseInt(value);
 							userItem.total = userItem.quantity * products[index].price;
 							products[index].quantity -= parseInt(value);
-
-							// if (products[index].quantity === 0)
-							// 	products.splice(index, 1);
 
 							isValid = true;
 						}
@@ -258,21 +144,24 @@ BamazonCustomer.prototype.launch = function() {
 				printProductTable(products);
 				printShoppingCart(shoppingCart);
 
+				promptForNextProcess();
+			});
+
+			function promptForNextProcess() {
 				inquirer.prompt([
 				{
 					type    : 'list',
 					name    : 'action',
-					message : 'What would you like to do next?\n',
+					message : 'Continue...',
 					choices : [
 						{
 							name  : 'Add another item to cart',
 							value : 'add'
 						},
 						{
-							name  : 'Update/Remove an item',
+							name  : 'Update/remove item from cart',
 							value : 'update'
 						},
-						new inquirer.Separator(),
 						{
 							name  : 'Checkout',
 							value : 'checkout'
@@ -286,27 +175,201 @@ BamazonCustomer.prototype.launch = function() {
 							promptUser(shoppingCart);
 							break;
 						case 'update':
-							updateCart(shoppingCart);
+							updateCart(shoppingCart, products);
 							break;
 						case 'checkout':
-							submitOrder(shoppingCart, products);
+							submitOrder(shoppingCart);
 							break;
 					}
-
 				});
-			});
+			}
 		}
 
-		// ------------------------------------------------------------------------------------
-		// SECOND: Start user prompts recursion cycle within BamazonCustomer launch() function.
-		// ------------------------------------------------------------------------------------
 		promptUser();
 	}
 
-	// -------------------------------------------------------------------------------
-	// FIRST: Starts internal function calls within BamazonCustomer launch() function.
-	// -------------------------------------------------------------------------------
-	retrieveProductsList(startShoppingPrompts);
-};
+	function printProductTable(products) {
+
+		clear();
+
+		console.log('─────────────────────────────────────────────────────────────────────────');
+		console.log('                        BAMAZON CUSTOMER ORDER VIEW                      ');
+		console.log('                               PRODUCTS LIST                             ');
+		console.log('─────────────────────────────────────────────────────────────────────────');
+
+		var table = new cli({
+			head: ['ID', 'PRODUCT', 'IN-STOCK', 'PRICE'],
+			colWidths: [6, 34, 12, 16],
+			style : {'padding-left' : 2, 'padding-right' : 2}
+		});
+
+		for (var item in products) {
+			table.push([ products[item].id, products[item].name, products[item].quantity, '$  ' + (products[item].price).toFixed(2) ]);
+		}
+
+		console.log(table.toString());
+
+		return;
+	}
+
+	function printShoppingCart(cart) {
+
+		var cartTable = new cli({
+			head: ['ID', 'PRODUCT', 'QUANTITY', 'TOTAL'],
+			colWidths: [6, 34, 12, 16],
+			style : {'padding-left' : 2, 'padding-right' : 2}
+		});
+
+		var totalsTable = new cli({
+			chars: { 'top': ' ' , 'top-mid': ' ' , 'top-left': '' , 'top-right': '',
+			'bottom': ' ' , 'bottom-mid': ' ' , 'bottom-left': '' , 'bottom-right': '',
+			'left': ' ' , 'left-mid': ' ' , 'mid': '' , 'mid-mid': '',
+			'right': ' ' , 'right-mid': ' ' , 'middle': ' ' },
+			colWidths: [6, 32, 14, 16],
+			style : {'padding-left' : 2, 'padding-right' : 2}
+		});
+
+		var subtotal = 0;
+
+		for (var item in cart) {
+			cartTable.push([ cart[item].id, cart[item].name, cart[item].quantity, '$  ' + (cart[item].total).toFixed(2) ]);
+			subtotal += cart[item].total;
+		}
+
+		totalsTable.push( [ ' ', ' ', 'SUBTOTAL', '$  ' + (subtotal).toFixed(2) ],
+						  [ ' ', ' ', 'TAX', '%  6.5' ],
+					  	  [ ' ', ' ', 'TOTAL DUE', '$  ' + (subtotal * 1.065).toFixed(2) ]);
+
+		console.log('─────────────────────────────────────────────────────────────────────────');
+		console.log('                            YOUR SHOPPING CART                           ');
+		console.log('─────────────────────────────────────────────────────────────────────────');
+		console.log(cartTable.toString());
+		// console.log(totalsTable.toString());
+		// console.log('─────────────────────────────────────────────────────────────────────────');
+		console.log(' ');
+
+		return;
+	}
+
+	function submitOrder(shoppingCart) {
+
+		var queries = '';
+
+		shoppingCart.forEach( function (item) {
+			queries += mysql.format("UPDATE products SET stock_quantity = ( stock_quantity - ? ) WHERE product_id = ?; ", [ item.quantity, item.id]);
+		});
+
+		connection.query(queries, function(error, results) {
+			if (error)
+				throw error;
+			else {
+				var totalsTable = new cli({
+					chars: { 'top': ' ' , 'top-mid': ' ' , 'top-left': '' , 'top-right': '',
+					'bottom': ' ' , 'bottom-mid': ' ' , 'bottom-left': '' , 'bottom-right': '',
+					'left': ' ' , 'left-mid': ' ' , 'mid': '' , 'mid-mid': '',
+					'right': ' ' , 'right-mid': ' ' , 'middle': ' ' },
+					colWidths: [6, 32, 14, 16],
+					style : {'padding-left' : 2, 'padding-right' : 2}
+				});
+
+				var subtotal = 0;
+
+				for (var item in shoppingCart) {
+					subtotal += shoppingCart[item].total;
+				}
+
+				totalsTable.push( [ ' ', ' ', 'SUBTOTAL', '$  ' + (subtotal).toFixed(2) ],
+								  [ ' ', ' ', 'TAX', '%  6.5' ],
+							  	  [ ' ', ' ', 'TOTAL DUE', '$  ' + (subtotal * 1.065).toFixed(2) ]);
+
+				console.log(totalsTable.toString());
+				console.log('─────────────────────────────────────────────────────────────────────────');
+
+				console.log("\n\nOrder successfully submitted to Bamazon.\n");
+				console.log("Thank you for shopping.\n\n");
+			}
+		});
+
+		connection.end();
+	}
+
+	function updateCart(shoppingCart, products) {
+
+		var updatedCart = shoppingCart;
+
+		var updateItem = { id		: 0,
+						   quantity	: 0,
+						   total	: 0 };
+
+		inquirer.prompt([
+		{
+			type	 : 'input',
+			name	 : 'updateItem',
+			message  : 'Enter shopping cart ID of item you wish to edit:',
+			validate : function(value)
+			{
+				var isValid = false;
+
+				for (var item in shoppingCart) {
+					if (shoppingCart[item].id === parseInt(value)) {
+						updateItem.id = parseInt(value);
+						isValid = true;
+					}
+				}
+
+				return (isValid) ? isValid : 'Please enter a valid product ID: ';
+			}
+		},
+		{
+			type     : 'input',
+			name     : 'quantity',
+			message  : 'Enter new quantity or 0 to remove item from cart:',
+			validate : function(value)
+			{
+				var isValid = false;
+
+				if (parseInt(value) === 0)
+					return true;
+				else {
+					for (var item in shoppingCart) {
+						if (shoppingCart[item].id === updateItem.id) {
+							updateItem.quantity = parseInt(value);
+							updateItem.total = updateItem.quantity * shoppingCart[item].price;
+							isValid = true;
+						}
+						else if ( shoppingCart[item].id === updateItem.id && shoppingCart[item].quantity < parseInt(value) )
+							inStock = 'Max quantity for this item is ' + shoppingCart[item].quantity;
+					}
+
+					return (isValid) ? isValid : inStock;
+				}
+			}
+		}
+		]).then(function (answer) {
+
+			var itemDuplicate = false;
+
+			for (var item in shoppingCart) {
+				if (shoppingCart[item].id === userItem.id) {
+					itemDuplicate = true;
+					shoppingCart[item].quantity += userItem.quantity;
+					shoppingCart[item].total += userItem.total;
+					break;
+				}
+			}
+
+			if (!itemDuplicate)
+				shoppingCart.push(userItem);
+
+			printProductTable(products);
+			printShoppingCart(shoppingCart);
+
+			promptForNextProcess();
+		});
+
+		return updatedCart;
+	}
+
+} // END BamazonCustomer()
 
 module.exports = BamazonCustomer;

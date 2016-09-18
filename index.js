@@ -1,5 +1,9 @@
 var inquirer = require('inquirer');
 
+/**
+ * [selectInterfacePrompt description]
+ * @return {[type]} [description]
+ */
 function selectInterfacePrompt() {
 
 	inquirer.prompt([
@@ -55,18 +59,30 @@ function selectInterfacePrompt() {
 	});
 }
 
+/**
+ * [initCustomerPortal description]
+ * @return {[type]} [description]
+ */
 function initCustomerPortal() {
 	var BamazonCustomer = require('./src/BamazonCustomer.js');
 	var customerPortal = new BamazonCustomer();
 	customerPortal.launch();
 }
 
+/**
+ * [initManagerPortal description]
+ * @return {[type]} [description]
+ */
 function initManagerPortal() {
 	var BamazonManager = require('./src/BamazonManager.js');
 	var manager = new BamazonManager();
 	manager.launch();
 }
 
+/**
+ * [initExecutivePortal description]
+ * @return {[type]} [description]
+ */
 function initExecutivePortal() {
 	var BamazonExecutive = require('./src/BamazonExecutive.js');
 	var executive = new BamazonExecutive();
@@ -74,6 +90,6 @@ function initExecutivePortal() {
 }
 
 /**
- * RUN APPLICATION
+ * START APPLICATION
  */
 selectInterfacePrompt();
