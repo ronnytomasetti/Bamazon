@@ -1,4 +1,4 @@
-# Bamazon - Week 12 Homework
+# Bamazon Node Storefront
 ----------
 
 ## Overview
