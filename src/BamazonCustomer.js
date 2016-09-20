@@ -26,9 +26,10 @@ function BamazonCustomer() {
 		multipleStatements : true
 	});
 
-	this.launch = function() {
-		var productList = [];
+	var productArray = [];
+	var shoppingCart = [];
 
+	this.launch = function() {
 		connection.connect();
 
 		connection.query('SELECT * FROM products WHERE stock_quantity > (0)',
@@ -43,149 +44,140 @@ function BamazonCustomer() {
 						quantity : rows[index].stock_quantity
 					};
 
-					productList.push(product);
+					productArray.push(product);
 				}
-				startPrompts(productList);
+
+				promptUser();
 			}
 		);
 	};
 
 	/**
-	 * [startPrompts description]
-	 * @param  {[type]} productList [description]
-	 * @return {[type]}             [description]
+	 * [promptUser description]
+	 * @param  {[type]} cart [description]
+	 * @return {[type]}      [description]
 	 */
-	function startPrompts(productList) {
+	function promptUser(cart) {
 
-		var products = productList;
+		shoppingCart = (cart) ? cart : [];
 
-		/**
-		 * [promptUser description]
-		 * @param  {[type]} cart [description]
-		 * @return {[type]}      [description]
-		 */
-		function promptUser(cart) {
+		var userItem = { id 	  : 0,
+						 name     : '',
+						 quantity : 0,
+						 total 	  : 0 };
 
-			var shoppingCart = (cart) ? cart : [];
+		printProductTable();
+		printShoppingCart();
 
-			var userItem = { id 	  : 0,
-							 name     : '',
-							 quantity : 0,
-							 total 	  : 0 };
-
-			printProductTable(products);
-			printShoppingCart(shoppingCart);
-
-			inquirer.prompt([
+		inquirer.prompt([
+		{
+			type	 : 'input',
+			name	 : 'newItem',
+			message  : 'Enter ID to add product to shopping cart:',
+			validate : function(value)
 			{
-				type	 : 'input',
-				name	 : 'newItem',
-				message  : 'Enter ID to add product to shopping cart:',
-				validate : function(value)
-				{
-					var isValid = false;
+				var isValid = false;
 
-					for (var index in productList) {
-						if (products[index].id === parseInt(value)) {
-							userItem.id = parseInt(value);
-							userItem.name = products[index].name;
-							isValid = true;
-						}
-
-						if (products[index].id === parseInt(value) && products[index].quantity === 0)
-							return 'Sorry, currently out of stock. Please enter another ID.';
+				for (var index in productArray) {
+					if (productArray[index].id === parseInt(value)) {
+						userItem.id = parseInt(value);
+						userItem.name = productArray[index].name;
+						isValid = true;
 					}
 
-					return (isValid) ? isValid : 'Please enter a valid product ID: ';
+					if (productArray[index].id === parseInt(value) && productArray[index].quantity === 0)
+						return 'Sorry, currently out of stock. Please enter another ID.';
 				}
-			},
-			{
-				type     : 'input',
-				name     : 'quantity',
-				message  : 'How many would you like to add to cart?',
-				validate : function(value)
-				{
-					var isValid = false;
-					var inStock = '';
 
-					for (var index in products)
-					{
-						if ( products[index].id === userItem.id && products[index].quantity >= parseInt(value) )
-						{
-							userItem.quantity = parseInt(value);
-							userItem.total = userItem.quantity * products[index].price;
-							products[index].quantity -= parseInt(value);
-
-							isValid = true;
-						}
-						else if ( products[index].id === userItem.id && products[index].quantity < parseInt(value) )
-							inStock = 'Max quantity for this item is ' + products[index].quantity;
-					}
-
-					return (isValid) ? isValid : inStock;
-				}
+				return (isValid) ? isValid : 'Please enter a valid product ID: ';
 			}
-			]).then(function (answer) {
+		},
+		{
+			type     : 'input',
+			name     : 'quantity',
+			message  : 'How many would you like to add to cart?',
+			validate : function(value)
+			{
+				var isValid = false;
+				var inStock = '';
 
-				var itemDuplicate = false;
+				for (var index in productArray)
+				{
+					if ( productArray[index].id === userItem.id && productArray[index].quantity >= parseInt(value) )
+					{
+						userItem.quantity = parseInt(value);
+						userItem.total = userItem.quantity * productArray[index].price;
+						productArray[index].quantity -= parseInt(value);
 
-				for (var item in shoppingCart) {
-					if (shoppingCart[item].id === userItem.id) {
-						itemDuplicate = true;
-						shoppingCart[item].quantity += userItem.quantity;
-						shoppingCart[item].total += userItem.total;
+						isValid = true;
 						break;
 					}
+					else if (parseInt(value) < 0 || productArray[index].id === userItem.id && productArray[index].quantity < parseInt(value) )
+						inStock = 'Invalid quantity. Max quantity for this item is ' + productArray[index].quantity;
+						break;
 				}
 
-				if (!itemDuplicate)
-					shoppingCart.push(userItem);
-
-				printProductTable(products);
-				printShoppingCart(shoppingCart);
-
-				promptForNextProcess();
-			});
-
-			function promptForNextProcess() {
-				inquirer.prompt([
-				{
-					type    : 'list',
-					name    : 'action',
-					message : 'Continue...',
-					choices : [
-						{
-							name  : 'Add another item to cart',
-							value : 'add'
-						},
-						{
-							name  : 'Update/remove item from cart',
-							value : 'update'
-						},
-						{
-							name  : 'Checkout',
-							value : 'checkout'
-						}
-					]
-				}
-				]).then(function (answer)
-				{
-					switch (answer.action) {
-						case 'add':
-							promptUser(shoppingCart);
-							break;
-						case 'update':
-							updateCart(shoppingCart, products);
-							break;
-						case 'checkout':
-							submitOrder(shoppingCart);
-							break;
-					}
-				});
+				return (isValid) ? isValid : inStock;
 			}
 		}
+		]).then(function (answer) {
 
-		promptUser();
+			var itemDuplicate = false;
+
+			for (var item in shoppingCart) {
+				if (shoppingCart[item].id === userItem.id) {
+					itemDuplicate = true;
+					shoppingCart[item].quantity += userItem.quantity;
+					shoppingCart[item].total += userItem.total;
+					break;
+				}
+			}
+
+			if (!itemDuplicate)
+				shoppingCart.push(userItem);
+
+			printProductTable();
+			printShoppingCart();
+
+			promptForNextProcess();
+		});
+
+		function promptForNextProcess() {
+			inquirer.prompt([
+			{
+				type    : 'list',
+				name    : 'action',
+				message : 'Continue...',
+				choices : [
+					{
+						name  : 'Add another item to cart',
+						value : 'add'
+					},
+					{
+						name  : 'Update/remove item from cart',
+						value : 'update'
+					},
+					{
+						name  : 'Checkout',
+						value : 'checkout'
+					}
+				]
+			}
+			]).then(function (answer)
+			{
+				switch (answer.action) {
+					case 'add':
+						promptUser(shoppingCart);
+						break;
+					case 'update':
+						updateCart();
+						break;
+					case 'checkout':
+						submitOrder();
+						break;
+				}
+			});
+		}
 	}
 
 	function printProductTable(products) {
@@ -203,8 +195,8 @@ function BamazonCustomer() {
 			style : {'padding-left' : 2, 'padding-right' : 2}
 		});
 
-		for (var item in products) {
-			table.push([ products[item].id, products[item].name, products[item].quantity, '$  ' + (products[item].price).toFixed(2) ]);
+		for (var item in productArray) {
+			table.push([ productArray[item].id, productArray[item].name, productArray[item].quantity, '$  ' + (productArray[item].price).toFixed(2) ]);
 		}
 
 		console.log(table.toString());
@@ -212,7 +204,7 @@ function BamazonCustomer() {
 		return;
 	}
 
-	function printShoppingCart(cart) {
+	function printShoppingCart() {
 
 		var cartTable = new cli({
 			head: ['ID', 'PRODUCT', 'QUANTITY', 'TOTAL'],
@@ -231,9 +223,9 @@ function BamazonCustomer() {
 
 		var subtotal = 0;
 
-		for (var item in cart) {
-			cartTable.push([ cart[item].id, cart[item].name, cart[item].quantity, '$  ' + (cart[item].total).toFixed(2) ]);
-			subtotal += cart[item].total;
+		for (var item in shoppingCart) {
+			cartTable.push([ shoppingCart[item].id, shoppingCart[item].name, shoppingCart[item].quantity, '$  ' + (shoppingCart[item].total).toFixed(2) ]);
+			subtotal += shoppingCart[item].total;
 		}
 
 		totalsTable.push( [ ' ', ' ', 'SUBTOTAL', '$  ' + (subtotal).toFixed(2) ],
@@ -244,14 +236,15 @@ function BamazonCustomer() {
 		console.log('                            YOUR SHOPPING CART                           ');
 		console.log('─────────────────────────────────────────────────────────────────────────');
 		console.log(cartTable.toString());
-		// console.log(totalsTable.toString());
-		// console.log('─────────────────────────────────────────────────────────────────────────');
 		console.log(' ');
 
 		return;
 	}
 
-	function submitOrder(shoppingCart) {
+	function submitOrder() {
+
+		console.log('─────────────────────────────────────────────────────────────────────────');
+		console.log('Processing order...');
 
 		var queries = '';
 
@@ -293,7 +286,7 @@ function BamazonCustomer() {
 		connection.end();
 	}
 
-	function updateCart(shoppingCart, products) {
+	function updateCart() {
 
 		var updatedCart = shoppingCart;
 
@@ -317,7 +310,7 @@ function BamazonCustomer() {
 					}
 				}
 
-				return (isValid) ? isValid : 'Please enter a valid product ID: ';
+				return (isValid) ? isValid : 'Please enter a valid ID from Shopping Cart: ';
 			}
 		},
 		{
