@@ -21,6 +21,8 @@ Bamazon is a storefront sort of like Amazon but without any of the awesome featu
 
 - Run `npm install` for dependencies.
 
+- Source `BamazonDB.sql` in order to create and load initial database data.
+
 - Rename `EXAMPLE__keys.js` to `keys.js`.
 
 - Inside `keys.js` file, provide values for mysql connection (development database).

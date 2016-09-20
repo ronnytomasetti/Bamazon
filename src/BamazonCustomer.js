@@ -110,11 +110,9 @@ function BamazonCustomer() {
 						productArray[index].quantity -= parseInt(value);
 
 						isValid = true;
-						break;
 					}
 					else if (parseInt(value) < 0 || productArray[index].id === userItem.id && productArray[index].quantity < parseInt(value) )
 						inStock = 'Invalid quantity. Max quantity for this item is ' + productArray[index].quantity;
-						break;
 				}
 
 				return (isValid) ? isValid : inStock;
