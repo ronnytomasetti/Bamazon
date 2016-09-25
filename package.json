@@ -2,9 +2,9 @@
   "name": "bamazon",
   "version": "1.0.0",
   "description": "Next generation Amazon like storefront.",
-  "main": "BamazonCustomer.js",
+  "main": "app.js",
   "scripts": {
-    "start": "clear && node index.js",
+    "start": "clear && node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

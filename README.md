@@ -17,21 +17,27 @@ Bamazon is a storefront sort of like Amazon but without any of the awesome featu
 
 ## Installation
 
-- Clone repo locally -> cd into project folder.
+- Clone repo locally -> `cd` into project folder.
 
-- Run `npm install` for dependencies.
 
-- Source `BamazonDB.sql` in order to create and load initial database data.
+- Run `npm install` to locally install dependencies.
+
+
+- Log into localhost mysql shell and source `BamazonDB.sql` file in order to create and load initial database data.
+
+  - In mysql shell, this can be done using the command `source /FULL_PATH_HERE/BamazonDB.sql`
+
 
 - Rename `EXAMPLE__keys.js` to `keys.js`.
 
-- Inside `keys.js` file, provide values for mysql connection (development database).
+
+- Inside `keys.js` file, provide values for your local mysql connection where the BamazonDB.sql file was sourced.
 
 ----------
 
 ### Challenge #1: Customer View (Minimum Requirement)
 
-This is the origial product list based on the dummy data retrieved from MySQL database.
+This is the original product list based on the dummy data retrieved from MySQL database.
 
 ![Original product list](https://dl.dropboxusercontent.com/u/2317062/BamazonREADME/0_original_product_list.png)
 
